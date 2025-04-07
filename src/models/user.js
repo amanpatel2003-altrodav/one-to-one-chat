@@ -1,7 +1,9 @@
 const { DataTypes, Model } = require('sequelize');
 const sequelize = require('../config/database');
-const UserIdGenerator = require('../../../shared/utils/userIdGenerator');
+const UserIdGenerator = require('../utils/userIdGenerator');
+
 class User extends Model {}
+
 User.init({
   userId: {
     type: DataTypes.STRING(50),
@@ -94,4 +96,5 @@ User.init({
   paranoid: true,
   timestamps: true
 });
+
 module.exports = User;
