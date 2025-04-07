@@ -26,6 +26,8 @@
   },
   "scripts": {
     "dev": "nodemon src/index.js",
+    "vercel-build": "npm run install-extras && echo 'Build starting...'",
+    "install-extras": "npm install pg pg-hstore",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
