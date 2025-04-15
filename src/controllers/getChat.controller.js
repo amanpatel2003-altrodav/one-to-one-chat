@@ -6,17 +6,16 @@ const {
 } = require("../services/recent_chats_service/recent_chat_service");
 const RoomIDGenerate = require("../utils/RoomId/RoomID.generate");
 const moment = require("moment");
+const ChatConnection = require("../models/chat.connection.model.js");
 class GetChats {
   async SearchUser(req, res) {
     try {
       const { SearchQuery } = req.query; // Get search term from request query
-
       if (!SearchQuery) {
         return res.status(400).json({ message: "Search query is required" });
       }
-
       // Search users by name or username (case-insensitive)
-      const users = await User.findAll({
+      const users = await ChatConnection.findAll({
         where: {
           [Op.or]: [
             { name: { [Op.iLike]: `%${SearchQuery}%` } }, // Case-insensitive search
@@ -25,7 +24,6 @@ class GetChats {
         },
         attributes: ["userId", "name", "username", "profilePicUrls"], // Select only necessary fields
       });
-
       res.status(200).json({ success: true, users });
     } catch (error) {
       console.error("Error searching users:", error);
@@ -37,16 +35,26 @@ class GetChats {
   async GetChatHistory(req, res) {
     try {
       const senderId = req.user.userId;
-      console.log("sender id",senderId)
+      console.log("sender id", senderId);
       const receiverId = req.query.receiverId;
-      console.log("receiver id",receiverId)
+      console.log("receiver id", receiverId);
       if (!senderId || !receiverId) {
         return res.status(400).json({ message: "Both user IDs are required" });
       }
-
+      const isSenderConnected = await ChatConnection.findOne({
+        where: { userId: senderId },
+      });
+      if (!isSenderConnected) {
+        return res.status(404).json({ message: "users are not connected to each other" });
+      }
+      const isReceiverConnected = await ChatConnection.findOne({
+        where: { userId: receiverId },
+      });
+      if (!isReceiverConnected) {
+        return res.status(404).json({ message: "users are not connected to each other" });
+      }
       // Get today's start time (midnight)
       const todayStart = moment().startOf("day").toDate();
-
       // Fetch chat history between both users for today only
       const messages = await Message.findAll({
         where: {
@@ -103,7 +111,18 @@ class GetChats {
           .status(400)
           .json({ error: "Missing senderId or receiverId" });
       }
-
+      const isSenderConnected = await ChatConnection.findOne({
+        where: { userId: senderId },
+      });
+      if (!isSenderConnected) {
+        return res.status(404).json({ message: "users are not connected to each other" });
+      }
+      const isReceiverConnected = await ChatConnection.findOne({
+        where: { userId: receiverId },
+      });
+      if (!isReceiverConnected) {
+        return res.status(404).json({ message: "users are not connected to each other" });
+      }
       const roomId = await RoomIDGenerate.generateRoomId(senderId, receiverId);
 
       // Fetch messages with pagination
@@ -131,7 +150,12 @@ class GetChats {
       if (!userId) {
         return res.status(400).json({ message: "User ID is required" });
       }
-
+      const isSenderConnected = await ChatConnection.findOne({
+        where: { userId: userId },
+      });
+      if (!isSenderConnected) {
+        return res.status(404).json({ message: "users are not connected to each other" });
+      }
       // Fetch all messages sorted by latest timestamp
       const message = await Message.findOne({
         where: {
@@ -143,14 +167,14 @@ class GetChats {
       // Group messages by roomId (senderId-receiverId or vice versa)
       const chatMap = new Map();
 
-        const roomId =
+      const roomId =
         message.sender_id < message.receiver_id
-            ? `${message.sender_id}-${message.receiver_id}`
-            : `${message.receiver_id}-${message.sender_id}`;
+          ? `${message.sender_id}-${message.receiver_id}`
+          : `${message.receiver_id}-${message.sender_id}`;
 
-        if (!chatMap.has(roomId)) {
-          chatMap.set(roomId, message); // Store only the latest message for each chat
-        }
+      if (!chatMap.has(roomId)) {
+        chatMap.set(roomId, message); // Store only the latest message for each chat
+      }
 
       // Convert to array and fetch receiver details
       const recentChats = await processRecentChats(chatMap, userId);

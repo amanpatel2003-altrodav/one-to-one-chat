@@ -12,38 +12,27 @@ User.init({
     allowNull: false,
     defaultValue: () => UserIdGenerator.generate()
   },
-  
   mobileNumber: {
     type: DataTypes.STRING(20),
     unique: true,
     allowNull: false,
     validate: {
-      is: /^\d{10,14}$/ // Validate digits only, without country code
+      is: /^[+]\d{10,14}$/ // Requires international format
     }
   },
-  
   countryCode: {
     type: DataTypes.STRING(5),
-    allowNull: false,
-    defaultValue: '+91' // Default to India, but can be changed
+    allowNull: false
   },
-
-  platformType: {
-    type: DataTypes.ENUM('iOS', 'Android'),
-    allowNull: true
-  },
-
   name: {
     type: DataTypes.STRING(100),
     allowNull: true
   },
-
   username: {
     type: DataTypes.STRING(50),
     unique: true,
     allowNull: true
   },
-
   email: {
     type: DataTypes.STRING(100),
     unique: true,
@@ -52,74 +41,60 @@ User.init({
       isEmail: true
     }
   },
-
-  profilePicUrl: {
-    type: DataTypes.STRING, // Stores the S3 URL
+  user_activities: {
+    type: DataTypes.JSONB,  // Stores selected subcategory IDs as JSON array
     allowNull: true,
+    defaultValue: [],
   },
-
+  profilePicUrls: {
+    type: DataTypes.TEXT,
+    get() {
+      return this.getDataValue('profilePicUrls')
+        ? JSON.parse(this.getDataValue('profilePicUrls'))
+        : [];
+    },
+    set(value) {
+      this.setDataValue('profilePicUrls', JSON.stringify(value));
+    }
+  },
   verificationPhotoProcessed: {
     type: DataTypes.BOOLEAN, // True if processed
     defaultValue: false,
   },
-
   gender: {
-    type: DataTypes.ENUM("Male", "Female"),
+    type: DataTypes.ENUM("Male", "Female", "Other"),
     allowNull: true,
   },
-
   dob: {
     type: DataTypes.STRING, // Format: DD/MM/YYYY
     allowNull: true,
   },
-  
   qrCode: {
     type: DataTypes.TEXT(255),
     allowNull: true
   },
-
   deepLink: {
     type: DataTypes.STRING(255),
     allowNull: true
   },
-
   isVerified: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
   },
-
   lastLogin: {
     type: DataTypes.DATE,
     allowNull: true
   },
-
-  otp: {
-    type: DataTypes.STRING(6),
-    allowNull: true
-  },
-
-  otpExpiresAt: {
-    type: DataTypes.DATE,
-    allowNull: true
-  },
-  
   isProfileCompleted: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
   }
-
 }, {
   sequelize,
   modelName: 'User',
   tableName: 'users',
   paranoid: true,
-  timestamps: true,
-  indexes: [
-    {
-      unique: true,
-      fields: ['mobileNumber', 'countryCode']
-    }
-  ]
+  timestamps: true
 });
 
 module.exports = User;
