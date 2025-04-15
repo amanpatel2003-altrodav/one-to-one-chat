@@ -14,6 +14,14 @@ class GetChats {
       if (!SearchQuery) {
         return res.status(400).json({ message: "Search query is required" });
       }
+      const isUserConnected = await ChatConnection.findOne({
+        where: { userId: req.user.userId },
+      });
+      if (!isUserConnected) {
+        return res
+          .status(404)
+          .json({ message: "users are not connected to each other" });
+      }
       // Search users by name or username (case-insensitive)
       const users = await ChatConnection.findAll({
         where: {
