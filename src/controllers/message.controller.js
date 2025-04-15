@@ -4,6 +4,7 @@ const pusher = require("../services/pusher_service/pusher.service");
 const RoomIDGenerate = require("../utils/RoomId/RoomID.generate");
 const User = require("../models/user");
 const { uploadToS3 } = require("../services/s3.service");
+const ChatConnection = require("../models/chat.connection.model");
 class MessageController {
   async sendMessage(req, res) {
     try {
@@ -11,6 +12,7 @@ class MessageController {
       const receiverId = req.query.receiverId;
       const { message } = req.body;
       const file = req.files?.media_url;
+      console.log(senderId, receiverId, message);
       if (!senderId || !receiverId || !message) {
         return res.status(400).json({ error: "Missing required fields" });
       }
@@ -18,9 +20,22 @@ class MessageController {
       if (!senderIdEntry) {
         return res.status(404).json({ error: "Sender not found" });
       }
+      const IsSenderConnected = await ChatConnection.findOne({
+        where: { userId: senderId },
+      });
+      if (!IsSenderConnected) {
+        return res.status(404).json({ error: "users are not connected to each other" });
+      }
       const receiverIdEntry = await User.findByPk(receiverId);
+      console.log("receiverIdEntry", receiverIdEntry);
       if (!receiverIdEntry) {
         return res.status(404).json({ error: "Receiver not found" });
+      }
+      const IsReceiverConnected = await ChatConnection.findOne({
+        where: { userId: receiverId },
+      });
+      if (!IsReceiverConnected) {
+        return res.status(404).json({ error: "users are not connected to each other" });
       }
       const roomId = await RoomIDGenerate.generateRoomId(senderId, receiverId);
       let mediaUrl = null;
@@ -68,6 +83,12 @@ class MessageController {
       if (!senderIdEntry) {
         return res.status(404).json({ error: "Sender not found" });
       }
+      const IsSenderConnected = await ChatConnection.findOne({
+        where: { userId: senderId },
+      });
+      if (!IsSenderConnected) {
+        return res.status(404).json({ error: "users are not connected to each other" });
+      }
       if (!messageId || !newMessage) {
         return res
           .status(400)
@@ -112,7 +133,13 @@ class MessageController {
       }
       const senderIdEntry = await User.findByPk(userId);
       if (!senderIdEntry) {
-        return res.status(404).json({ error: "Sender not found" });
+        return res.status(404).json({ error: "user not found" });
+      }
+      const IsSenderConnected = await ChatConnection.findOne({
+        where: { userId: userId },
+      });
+      if (!IsSenderConnected) {
+        return res.status(404).json({ error: "users are not connected to each other" });
       }
       const { messageId } = req.params;
       if (!messageId) {
