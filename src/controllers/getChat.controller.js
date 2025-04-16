@@ -11,9 +11,11 @@ class GetChats {
   async SearchUser(req, res) {
     try {
       const { SearchQuery } = req.query; // Get search term from request query
+      console.log("search query",SearchQuery);
       if (!SearchQuery) {
         return res.status(400).json({ message: "Search query is required" });
       }
+      console.log("req.user.userId",req.user.userId);
       const isUserConnected = await ChatConnection.findOne({
         where: { userId: req.user.userId },
       });
