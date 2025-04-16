@@ -37,7 +37,8 @@ router.get(
 );
 router.get(
   "/searchuser",
-  SearchUser
+   authMiddleware.authenticate,
+   SearchUser
 )
 router.get(
   "/getChatHistory",
