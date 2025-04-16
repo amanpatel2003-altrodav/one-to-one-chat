@@ -12,6 +12,7 @@ class AuthMiddleware {
     try {
       const token = req.header('Authorization')?.replace('Bearer ', '');
       console.log("token",token)
+
       if (!token) {
         return res.status(401).json({ success: false, message: 'No token provided' });
       }
@@ -20,6 +21,8 @@ class AuthMiddleware {
       try {
         // decoded = jwt.verify(token, process.env.JWT_SECRET);
         decoded = jwt.verify(token, "your_secret_key");
+        console.log("Now:", Date.now());
+        console.log("Token expiry:", decoded.exp * 1000);
       } catch (error) {
         if (error.name === 'TokenExpiredError') {
           console.warn('⚠️ Token expired. Attempting to refresh...');
