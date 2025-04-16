@@ -19,8 +19,7 @@ class AuthMiddleware {
 
       let decoded;
       try {
-        // decoded = jwt.verify(token, process.env.JWT_SECRET);
-        decoded = jwt.verify(token, "your_secret_key");
+        decoded = jwt.verify(token, process.env.JWT_SECRET);
         console.log("Now:", Date.now());
         console.log("Token expiry:", decoded.exp * 1000);
       } catch (error) {
